@@ -1,0 +1,115 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1220;
+    color: white;
+}
+
+/* Container */
+.container {
+    width: 60%;
+    margin: auto;
+    padding: 30px;
+}
+
+/* Header */
+.header {
+    font-size: 32px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #94a3b8;
+    margin-bottom: 30px;
+}
+
+/* Input box */
+.search-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+textarea {
+    height: 120px;
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+    resize: none;
+    font-size: 14px;
+}
+
+button {
+    padding: 12px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+/* Result card */
+.result-card {
+    margin-top: 30px;
+    padding: 20px;
+    background: #111827;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.verdict {
+    font-size: 22px;
+}
+
+.score {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #22c55e;
+}
+
+.explanation {
+    color: #cbd5e1;
+    margin-top: 10px;
+}
+
+/* Best match */
+.best-match {
+    margin-top: 20px;
+    padding: 15px;
+    background: #1f2937;
+    border-radius: 10px;
+}
+
+.best-match a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+/* Articles */
+.articles {
+    margin-top: 30px;
+}
+
+.card {
+    background: #111827;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+.card h3 {
+    font-size: 16px;
+}
+
+.source {
+    color: #94a3b8;
+    font-size: 12px;
+}

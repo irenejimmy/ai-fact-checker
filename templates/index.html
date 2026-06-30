@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Fact Checker</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        🧠 AI FACT CHECKER
+    </div>
+
+    <p class="subtitle">
+        Verify news claims using real-time evidence + AI
+    </p>
+
+    <form method="POST" class="search-box">
+        <textarea name="news" placeholder="Enter a news claim..." required></textarea>
+        <button type="submit">Verify Claim</button>
+    </form>
+
+    {% if result %}
+
+    <div class="result-card">
+
+        <h2 class="verdict">{{ result.verdict }}</h2>
+
+        <div class="score">
+            Confidence: {{ result.score }}%
+        </div>
+
+        <p class="explanation">
+            {{ result.explanation }}
+        </p>
+
+        {% if result.best_title %}
+
+        <div class="best-match">
+            <h3>Best Evidence</h3>
+            <p><b>{{ result.best_title }}</b></p>
+            <p class="source">{{ result.best_source }}</p>
+
+            <a href="{{ result.best_url }}" target="_blank">Read Full Article</a>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    {% endif %}
+
+    <div class="articles">
+
+        {% for a in articles[:5] %}
+
+        <div class="card">
+            <h3>{{ a.title }}</h3>
+            <p class="source">{{ a.source.name }}</p>
+            <a href="{{ a.url }}" target="_blank">Open</a>
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+</body>
+</html>
