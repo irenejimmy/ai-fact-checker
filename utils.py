@@ -1,20 +1,16 @@
 import re
 import requests
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+from difflib import SequenceMatcher
 
 API_KEY = "95f3f1aa91ee4621a4b8cba7cfbab0a5"
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # ---------------------------
 # 1. QUERY BUILDER
 # ---------------------------
 def build_query(text):
-
     text = text.lower()
     text = re.sub(r"[^a-zA-Z\s]", "", text)
+
     words = text.split()
 
     stopwords = {
@@ -25,14 +21,14 @@ def build_query(text):
 
     keywords = [w for w in words if w not in stopwords]
 
-    # 🔥 fallback logic
     if len(keywords) < 2:
         return text[:60]
 
     return " ".join(keywords[:6])
 
+
 # ---------------------------
-# 2. NEWS FETCHER (MUST BE ABOVE fact_check)
+# 2. NEWS FETCHER
 # ---------------------------
 def get_news(query):
 
@@ -41,36 +37,41 @@ def get_news(query):
     search_query = build_query(query)
 
     params = {
-    "q": search_query,
-    "language": "en",
-    "sortBy": "publishedAt",   # 🔥 change this
-    "pageSize": 20,
-    "searchIn": "title",
-    "apiKey": API_KEY
-}
+        "q": search_query,
+        "language": "en",
+        "sortBy": "relevancy",
+        "pageSize": 5,
+        "searchIn": "title,description",
+        "apiKey": API_KEY
+    }
 
-    response = requests.get(url, params=params)
-    data = response.json()
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+    except requests.RequestException as e:
+        print("API ERROR:", e)
+        return []
 
     print("SEARCH QUERY:", search_query)
+    print("ARTICLES FOUND:", len(data.get("articles", [])))
 
     if data.get("status") != "ok":
-        print("API ERROR:", data)
         return []
 
     return data.get("articles", [])
-    print("FINAL QUERY:", search_query)
-    print("RESPONSE STATUS:", data.get("status"))
-    print("ARTICLES FOUND:", len(data.get("articles", [])))
 
 
 # ---------------------------
 # 3. SIMILARITY
 # ---------------------------
 def get_similarity(text1, text2):
-
-    emb = model.encode([text1, text2], normalize_embeddings=True)
-    return cosine_similarity([emb[0]], [emb[1]])[0][0]
+    return SequenceMatcher(
+        None,
+        text1.lower(),
+        text2.lower()
+    ).ratio()
 
 
 # ---------------------------
@@ -87,30 +88,30 @@ def fact_check(claim):
             "explanation": "No matching news articles found."
         }, []
 
-    scores = []
+    best_score = 0
     best_article = None
-    best_score = -1
 
-    for a in articles:
+    for article in articles:
 
-        text = (a.get("title") or "") + " " + (a.get("description") or "")
+        text = " ".join(filter(None, [
+            article.get("title"),
+            article.get("description"),
+            article.get("content")
+        ]))
 
         score = get_similarity(claim, text)
-        scores.append(score)
 
         if score > best_score:
             best_score = score
-            best_article = a
+            best_article = article
 
-    avg_score = np.mean(scores)
-
-    if avg_score > 0.60:
+    if best_score >= 0.65:
         verdict = "✅ Supported by Evidence"
-        explanation = "Strong match found in multiple news sources."
+        explanation = "Strong match found in news."
 
-    elif avg_score > 0.40:
+    elif best_score >= 0.40:
         verdict = "🟡 Partially Supported"
-        explanation = "Some related news found but not strong confirmation."
+        explanation = "Some related news found."
 
     else:
         verdict = "❌ Not Supported"
@@ -118,9 +119,29 @@ def fact_check(claim):
 
     return {
         "verdict": verdict,
-        "score": round(avg_score * 100, 2),
+        "score": round(best_score * 100, 2),
         "explanation": explanation,
-        "best_title": best_article["title"] if best_article else None,
-        "best_source": best_article["source"]["name"] if best_article else None,
-        "best_url": best_article["url"] if best_article else None
+        "best_title": best_article.get("title"),
+        "best_source": best_article.get("source", {}).get("name"),
+        "best_url": best_article.get("url")
     }, articles
+
+
+# ---------------------------
+# TEST
+# ---------------------------
+if __name__ == "__main__":
+
+    claim = input("Enter a claim: ")
+
+    result, articles = fact_check(claim)
+
+    print("\nVerdict:", result["verdict"])
+    print("Score:", result["score"])
+    print("Explanation:", result["explanation"])
+
+    if result.get("best_title"):
+        print("\nBest Match")
+        print("Title :", result["best_title"])
+        print("Source:", result["best_source"])
+        print("URL   :", result["best_url"])
